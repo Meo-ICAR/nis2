@@ -26,7 +26,7 @@ Route::get('/auth/callback', function () {
 
     /*
      * // OAuth 2.0 providers...
-     *   $token = $user->token;
+     * $token = $user->token;
      *   $refreshToken = $user->refreshToken;
      *   $expiresIn = $user->expiresIn;
      *

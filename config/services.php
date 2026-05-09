@@ -40,6 +40,7 @@ return [
         'client_id' => env('OIDC_CLIENT_ID'),
         'client_secret' => env('OIDC_CLIENT_SECRET'),
         'redirect' => env('OIDC_REDIRECT_URI'),
+        'scopes' => ['openid', 'profile', 'email', 'internal_user_mgt_list'],
         // Optional: Enable JWT signature verification (default: false)
         // 'verify_jwt' => env('OIDC_VERIFY_JWT', false),
         // Optional: Provide a specific public key for JWT verification

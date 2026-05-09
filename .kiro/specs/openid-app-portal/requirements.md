@@ -65,17 +65,28 @@ Il pannello di amministrazione Filament consente agli amministratori di gestire 
 
 ### Requisito 3: Gestione delle Applicazioni (Admin)
 
-**User Story:** Come amministratore, voglio gestire il catalogo delle applicazioni disponibili nel portale, così da poter aggiungere, modificare o rimuovere applicazioni senza modificare il codice.
+**User Story:** Come amministratore, voglio gestire il catalogo delle applicazioni disponibili nel portale con tutte le informazioni necessarie alla conformità NIS2, così da avere tracciabilità completa di responsabilità e contratti per ogni asset software.
 
 #### Criteri di Accettazione
 
 1. THE Admin SHALL accedere alla gestione delle Application esclusivamente tramite il pannello Filament, protetto da autenticazione e verifica del ruolo amministrativo.
-2. WHEN un Admin crea una nuova Application, THE Portal SHALL richiedere e validare i campi: nome (stringa, max 100 caratteri), URL (URL valido, max 500 caratteri), e stato attivo/inattivo.
+2. WHEN un Admin crea una nuova Application, THE Portal SHALL richiedere e validare i campi obbligatori: nome (stringa, max 100 caratteri), URL (URL valido, max 500 caratteri), e stato attivo/inattivo.
 3. WHEN un Admin crea una nuova Application, THE Portal SHALL accettare opzionalmente: descrizione (testo, max 500 caratteri), icona/logo (file immagine o URL), e valore `sort_order` (intero, default 0).
-4. WHEN un Admin modifica una Application esistente, THE Portal SHALL aggiornare i dati nel database e riflettere le modifiche nel Launcher alla successiva visualizzazione.
-5. WHEN un Admin disattiva una Application, THE Portal SHALL nascondere la Application dal Launcher per tutti gli User, indipendentemente dai Permission esistenti.
-6. WHEN un Admin elimina una Application, THE Portal SHALL rimuovere anche tutti i Permission associati alla Application eliminata.
-7. THE Portal SHALL mostrare nel pannello Filament una lista paginata delle Application con colonne: nome, URL, stato, numero di utenti con accesso, e data di creazione.
+4. WHEN un Admin crea o modifica una Application, THE Portal SHALL accettare i seguenti campi di conformità NIS2:
+   - `scientific_owner` (stringa, max 150): nome e cognome del referente scientifico/funzionale responsabile dell'applicazione
+   - `internal_technical_contact` (stringa, max 150): nome e cognome del tecnico interno responsabile
+   - `external_technical_contact` (stringa, max 150, nullable): nome e cognome o ragione sociale del referente tecnico esterno (fornitore/vendor)
+   - `external_technical_email` (email, nullable): indirizzo email del referente tecnico esterno
+   - `support_contract_expiry` (data, nullable): data di scadenza del contratto di assistenza/manutenzione
+   - `contract_notes` (testo, nullable): note aggiuntive sul contratto o sull'assistenza
+5. WHEN un Admin modifica una Application esistente, THE Portal SHALL aggiornare i dati nel database e riflettere le modifiche nel Launcher alla successiva visualizzazione.
+6. WHEN un Admin disattiva una Application, THE Portal SHALL nascondere la Application dal Launcher per tutti gli User, indipendentemente dai Permission esistenti.
+7. WHEN un Admin elimina una Application, THE Portal SHALL rimuovere anche tutti i Permission associati alla Application eliminata.
+8. THE Portal SHALL mostrare nel pannello Filament una lista paginata delle Application con colonne: nome, URL, stato, referente scientifico, tecnico interno, scadenza contratto, numero di utenti con accesso, e data di creazione.
+9. WHEN la data `support_contract_expiry` di una Application è entro 30 giorni dalla data corrente, THE Portal SHALL evidenziare visivamente la riga nel pannello Filament con un badge di avviso "In scadenza".
+10. WHEN la data `support_contract_expiry` di una Application è già trascorsa, THE Portal SHALL evidenziare visivamente la riga nel pannello Filament con un badge di errore "Scaduto".
+11. THE Portal SHALL fornire nel pannello Filament un filtro per visualizzare le Application con contratto scaduto o in scadenza entro N giorni (configurabile, default 30).
+12. THE Portal SHALL fornire una vista di esportazione (CSV) delle Application con tutti i campi NIS2, accessibile agli Admin.
 
 ---
 
@@ -184,7 +195,7 @@ Il modello User ha già i campi standard Laravel. Aggiungi una migration per i c
 ### Prompt 2 — Modelli e Migration per Applicazioni e Permessi
 
 ```
-In un progetto Laravel 13, crea i modelli Eloquent e le migration per il sistema di permessi del portale app launcher.
+In un progetto Laravel 13, crea i modelli Eloquent e le migration per il sistema di permessi del portale app launcher con conformità NIS2.
 
 Schema richiesto:
 
@@ -196,6 +207,12 @@ Tabella `applications`:
 - icon_url (string, nullable)
 - sort_order (integer, default 0)
 - is_active (boolean, default true)
+- scientific_owner (string, 150, nullable) — referente scientifico/funzionale NIS2
+- internal_technical_contact (string, 150, nullable) — tecnico interno NIS2
+- external_technical_contact (string, 150, nullable) — referente tecnico esterno NIS2
+- external_technical_email (string, nullable) — email referente esterno
+- support_contract_expiry (date, nullable) — scadenza contratto assistenza
+- contract_notes (text, nullable) — note contratto
 - timestamps
 
 Tabella `roles`:
@@ -260,11 +277,11 @@ Implementa:
 ### Prompt 4 — Pannello Filament: Gestione Applicazioni
 
 ```
-In un progetto Laravel 13 con Filament v3, crea la risorsa Filament per la gestione delle Application nel pannello admin del portale app launcher.
+In un progetto Laravel 13 con Filament v3, crea la risorsa Filament per la gestione delle Application nel pannello admin del portale app launcher con conformità NIS2.
 
 Crea `App\Filament\Resources\ApplicationResource` con:
 
-Form fields:
+Form fields — Sezione "Generale":
 - name: TextInput, required, max 100
 - url: TextInput (URL), required, max 500, con avviso visivo se il protocollo non è HTTPS
 - description: Textarea, nullable, max 500
@@ -272,19 +289,37 @@ Form fields:
 - sort_order: TextInput numerico, default 0
 - is_active: Toggle, default true
 
+Form fields — Sezione "Conformità NIS2":
+- scientific_owner: TextInput, max 150, nullable — label "Referente Scientifico"
+- internal_technical_contact: TextInput, max 150, nullable — label "Tecnico Interno"
+- external_technical_contact: TextInput, max 150, nullable — label "Referente Tecnico Esterno"
+- external_technical_email: TextInput (email), nullable — label "Email Referente Esterno"
+- support_contract_expiry: DatePicker, nullable — label "Scadenza Contratto Assistenza"
+- contract_notes: Textarea, nullable — label "Note Contratto"
+
 Table columns:
 - name
 - url (truncata, cliccabile)
 - is_active (badge verde/rosso)
+- scientific_owner
+- internal_technical_contact
+- support_contract_expiry con badge colorato:
+  - verde: data futura oltre 30 giorni
+  - arancione "In scadenza": entro 30 giorni
+  - rosso "Scaduto": data passata
 - Colonna calcolata: numero di utenti con accesso (diretti + tramite ruolo)
 - created_at
 
 Table actions:
 - Edit, Delete (con conferma)
 - Bulk action: Attiva/Disattiva selezionati
+- Action: Esporta CSV con tutti i campi NIS2
 
 Filters:
 - is_active
+- "Contratto in scadenza": select con opzioni "Scaduto", "Entro 30 giorni", "Entro 60 giorni", "Entro 90 giorni"
+- scientific_owner (text search)
+- internal_technical_contact (text search)
 
 Implementa l'observer `ApplicationObserver` che:
 - Al delete: rimuove tutti i Permission diretti e le associazioni Role-Application

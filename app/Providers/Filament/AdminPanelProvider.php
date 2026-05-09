@@ -59,12 +59,18 @@ class AdminPanelProvider extends PanelProvider
                 FilamentSocialitePlugin::make()
                     ->registration(true)  // Abilita la registrazione automatica per nuovi utenti
                     // (required) Add providers corresponding with providers in `config/services.php`.
+                    ->resolveUserUsing(function (string $provider, SocialiteUserContract $oauthUser, Authenticatable $user) {
+                        // Salva il token di WSO2 nella sessione di Laravel
+                        session()->put('wso2_access_token', $oauthUser->token);
+
+                        return $user;
+                    })
                     ->providers([
                         // Create a provider 'gitlab' corresponding to the Socialite driver with the same name.
                         Provider::make('oidc')
-                            ->label('OIDC')
-                            ->icon('fab-gitlab')
-                            ->color(Color::hex('#2f2a6b'))
+                            ->label('WSO2')
+                            ->icon('fab-openid')
+                            //  ->color(Color::hex('#2f2a6b'))
                             ->outlined(false)
                             ->stateless(false)
                         //   ->scopes(['...'])
