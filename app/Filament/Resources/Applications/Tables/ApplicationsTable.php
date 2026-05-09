@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Applications\Tables;
 
+use App\Models\Application;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -16,34 +18,55 @@ class ApplicationsTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('url')
-                    ->searchable(),
-                TextColumn::make('icon_url')
-                    ->searchable(),
-                TextColumn::make('sort_order')
-                    ->numeric()
+                    ->searchable()
                     ->sortable(),
+                TextColumn::make('category')
+                    ->badge()
+                    ->color('gray')
+                    ->searchable(),
+                TextColumn::make('criticality_level')
+                    ->label('Criticità NIS2')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'essential' => 'danger',
+                        'important' => 'warning',
+                        'standard' => 'success',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'essential' => 'Essenziale',
+                        'important' => 'Importante',
+                        'standard' => 'Standard',
+                        default => $state,
+                    })
+                    ->sortable(),
+                IconColumn::make('has_mfa')
+                    ->label('MFA')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-shield-check')
+                    ->falseIcon('heroicon-o-shield-exclamation')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 IconColumn::make('is_active')
+                    ->label('Attiva')
                     ->boolean(),
-                TextColumn::make('scientific_owner')
-                    ->searchable(),
-                TextColumn::make('internal_technical_contact')
-                    ->searchable(),
-                TextColumn::make('external_technical_contact')
-                    ->searchable(),
-                TextColumn::make('external_technical_email')
-                    ->searchable(),
+                IconColumn::make('is_strategic')
+                    ->label('Strategica')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-star')
+                    ->falseIcon('')
+                    ->trueColor('warning'),
+                TextColumn::make('hosting_type')
+                    ->label('Hosting')
+                    ->toggleable(),
                 TextColumn::make('support_contract_expiry')
+                    ->label('Scadenza Contratto')
                     ->date()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
+                    ->color(fn ($record): string => $record->contractStatus() === 'expired' ? 'danger' : ($record->contractStatus() === 'expiring' ? 'warning' : 'success')),
+                TextColumn::make('internal_technical_contact')
+                    ->label('Referente Tecnico')
+                    ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -51,6 +74,12 @@ class ApplicationsTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('open_management')
+                    ->label('Apri Cruscotto')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->url(fn (Application $record) => $record->management_url)
+                    ->openUrlInNewTab()
+                    ->visible(fn (Application $record) => !empty($record->management_url)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -16,17 +16,40 @@ class Application extends Model
      */
     protected $fillable = [
         'name',
+        'short_name',
         'description',
         'url',
+        'project',
+        'category',
         'icon_url',
+        'url_documentation',
+        'url_cockpit',
+        'url_sandbox',
         'sort_order',
         'is_active',
+        'is_strategic',
         'scientific_owner',
+        'scientific_contact',
         'internal_technical_contact',
         'external_technical_contact',
         'external_technical_email',
+        'criticality_level',
+        'hosting_type',
+        'has_mfa',
+        'backup_strategy',
+        'management_url',
+        'service_tag',
+        'external_id',
+        'data_sensitivity',
+        'cpu',
+        'ram',
+        'hd',
+        'ports',
+        'runtime_type',
         'support_contract_expiry',
         'contract_notes',
+        'client_id',
+        'client_secret',
     ];
 
     /**
@@ -38,6 +61,8 @@ class Application extends Model
     {
         return [
             'is_active'               => 'boolean',
+            'is_strategic'            => 'boolean',
+            'has_mfa'                 => 'boolean',
             'support_contract_expiry' => 'date',
         ];
     }

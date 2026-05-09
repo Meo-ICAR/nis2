@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \App\Models\Application::observe(\App\Observers\ApplicationObserver::class);
+
         Event::listen(function (SocialiteWasCalled $event) {
             $event->extendSocialite('oidc', Provider::class);
         });
