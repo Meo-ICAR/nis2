@@ -4,11 +4,16 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
-use Laravel\Socialite\Socialite;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// use Laravel\Socialite\Socialite;
+
+Route::redirect('/', '/admin');
+
+/*
+ * Route::get('/', function () {
+ *     return view('welcome');
+ * });
+ */
 
 Route::get('/auth/redirect', function () {
     return Socialite::driver('oidc')->redirect();
