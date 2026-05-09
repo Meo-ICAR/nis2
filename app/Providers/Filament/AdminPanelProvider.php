@@ -37,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->brandLogo(asset('images/nis2_banner.png'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -59,12 +60,14 @@ class AdminPanelProvider extends PanelProvider
                 FilamentSocialitePlugin::make()
                     ->registration(true)  // Abilita la registrazione automatica per nuovi utenti
                     // (required) Add providers corresponding with providers in `config/services.php`.
-                    ->resolveUserUsing(function (string $provider, SocialiteUserContract $oauthUser, Authenticatable $user) {
-                        // Salva il token di WSO2 nella sessione di Laravel
-                        session()->put('wso2_access_token', $oauthUser->token);
-
-                        return $user;
-                    })
+                    /*
+                     * ->resolveUserUsing(function (string $provider, SocialiteUserContract $oauthUser, Authenticatable $user) {
+                     *     // Salva il token di WSO2 nella sessione di Laravel
+                     *     session()->put('wso2_access_token', $oauthUser->token);
+                     *
+                     *     return $user;
+                     * })
+                     */
                     ->providers([
                         // Create a provider 'gitlab' corresponding to the Socialite driver with the same name.
                         Provider::make('oidc')

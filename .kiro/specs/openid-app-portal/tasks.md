@@ -16,50 +16,50 @@ Stack: Laravel 13, Filament v5, PHP 8.3, SQLite (dev), PHPUnit 12, Eris (PBT).
   - Aggiornare il modello `User`: aggiungere i nuovi campi al `$fillable` (o attributi PHP 8), aggiungere i cast (`is_active` → boolean, `is_admin` → boolean, `last_login_at` → datetime)
   - _Requirements: 1.3, 6.1, 6.5_
 
-- [-] 2. Migration e modelli per applications, roles, pivot tables e audit_logs
-  - [ ] 2.1 Creare migration `create_applications_table` con tutti i campi inclusi quelli NIS2 (`scientific_owner`, `internal_technical_contact`, `external_technical_contact`, `external_technical_email`, `support_contract_expiry`, `contract_notes`)
+- [x] 2. Migration e modelli per applications, roles, pivot tables e audit_logs
+  - [x] 2.1 Creare migration `create_applications_table` con tutti i campi inclusi quelli NIS2 (`scientific_owner`, `internal_technical_contact`, `external_technical_contact`, `external_technical_email`, `support_contract_expiry`, `contract_notes`)
     - _Requirements: 3.2, 3.3, 3.4_
-  - [ ] 2.2 Creare migration `create_roles_table` con `name` (unique) e `description`
+  - [x] 2.2 Creare migration `create_roles_table` con `name` (unique) e `description`
     - _Requirements: 4.2_
-  - [ ] 2.3 Creare migration `create_role_application_table` (pivot con FK cascade)
+  - [x] 2.3 Creare migration `create_role_application_table` (pivot con FK cascade)
     - _Requirements: 4.2, 3.7_
-  - [ ] 2.4 Creare migration `create_user_role_table` (pivot con colonna `source` enum `manual|oidc` e FK cascade)
+  - [x] 2.4 Creare migration `create_user_role_table` (pivot con colonna `source` enum `manual|oidc` e FK cascade)
     - _Requirements: 4.3, 5.2, 5.3_
-  - [ ] 2.5 Creare migration `create_user_application_table` (pivot permessi diretti con FK cascade)
+  - [x] 2.5 Creare migration `create_user_application_table` (pivot permessi diretti con FK cascade)
     - _Requirements: 4.1, 3.7_
-  - [ ] 2.6 Creare migration `create_audit_logs_table` con indici su `event_type`, `user_id`, `created_at`; `user_id` e `admin_id` FK nullable con `ON DELETE SET NULL`
+  - [x] 2.6 Creare migration `create_audit_logs_table` con indici su `event_type`, `user_id`, `created_at`; `user_id` e `admin_id` FK nullable con `ON DELETE SET NULL`
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - [ ] 2.7 Creare modello `App\Models\Application` con: `$fillable`, cast (`is_active` → boolean, `support_contract_expiry` → date), scope `scopeActive()`, scope `scopeExpiringWithin(int $days)`, scope `scopeExpired()`, accessor `contractStatus(): string|null` che restituisce `'expired'|'expiring'|'valid'|null`
+  - [x] 2.7 Creare modello `App\Models\Application` con: `$fillable`, cast (`is_active` → boolean, `support_contract_expiry` → date), scope `scopeActive()`, scope `scopeExpiringWithin(int $days)`, scope `scopeExpired()`, accessor `contractStatus(): string|null` che restituisce `'expired'|'expiring'|'valid'|null`
     - _Requirements: 3.6, 3.9, 3.10, 3.11_
-  - [ ] 2.8 Creare modello `App\Models\Role` con `$fillable` e relazioni `belongsToMany(Application)` e `belongsToMany(User)` (con pivot `source`)
+  - [x] 2.8 Creare modello `App\Models\Role` con `$fillable` e relazioni `belongsToMany(Application)` e `belongsToMany(User)` (con pivot `source`)
     - _Requirements: 4.2, 4.3_
-  - [ ] 2.9 Creare modello `App\Models\AuditLog` con `$fillable`, cast `payload` → array, e `$timestamps = false` (solo `created_at`)
+  - [x] 2.9 Creare modello `App\Models\AuditLog` con `$fillable`, cast `payload` → array, e `$timestamps = false` (solo `created_at`)
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - [ ] 2.10 Scrivere property test per `contractStatus()` (Property 8)
+  - [x] 2.10 Scrivere property test per `contractStatus()` (Property 8)
     - **Property 8: Badge scadenza contratto riflette la data corrente**
     - **Validates: Requirements 3.9, 3.10**
     - Usare Eris con generatori di date arbitrarie; verificare che `contractStatus()` restituisca `'expired'`, `'expiring'`, `'valid'` o `null` in base alla data rispetto a `now()`
 
-- [ ] 3. Aggiornamento modello User con relazioni e metodo accessibleApplications()
+- [x] 3. Aggiornamento modello User con relazioni e metodo accessibleApplications()
   - Aggiungere al modello `User`: relazione `belongsToMany(Role)` con pivot `source`, relazione `belongsToMany(Application)` (diretti, tabella `user_application`)
   - Implementare `accessibleApplications(): Collection` che restituisce l'unione senza duplicati di applicazioni dirette + applicazioni dei ruoli, filtrate per `is_active = true`, ordinate per `sort_order`
   - Implementare `isAdmin(): bool` che legge il campo `is_admin`
   - _Requirements: 2.1, 4.3, 4.4, 4.5_
-  - [ ] 3.1 Scrivere property test per `accessibleApplications()` — unione e assenza duplicati (Property 2, 3)
+  - [x] 3.1 Scrivere property test per `accessibleApplications()` — unione e assenza duplicati (Property 2, 3)
     - **Property 2: Il Launcher mostra esattamente le applicazioni autorizzate**
     - **Property 3: Nessun duplicato nell'unione dei permessi**
     - **Validates: Requirements 2.1, 4.3, 4.4**
     - Usare Eris con generatori di interi per creare set arbitrari di permessi diretti e ruoli
-  - [ ] 3.2 Scrivere property test per ordinamento e filtro is_active (Property 4, 6)
+  - [x] 3.2 Scrivere property test per ordinamento e filtro is_active (Property 4, 6)
     - **Property 4: Ordinamento per sort_order**
     - **Property 6: Applicazione disattivata non appare nel Launcher**
     - **Validates: Requirements 2.5, 3.6**
-  - [ ] 3.3 Scrivere property test per idempotenza assegnazione permesso e revoca con ruolo (Property 12, 13)
+  - [x] 3.3 Scrivere property test per idempotenza assegnazione permesso e revoca con ruolo (Property 12, 13)
     - **Property 12: Revoca permesso diretto preserva l'accesso via ruolo**
     - **Property 13: Idempotenza dell'assegnazione permesso**
     - **Validates: Requirements 4.5, 4.7**
 
-- [ ] 4. Checkpoint — Eseguire le migration e verificare lo schema
+- [-] 4. Checkpoint — Eseguire le migration e verificare lo schema
   - Eseguire `php artisan migrate` e verificare che tutte le tabelle siano create correttamente
   - Verificare che i modelli siano istanziabili e le relazioni funzionino con dati di test minimali
   - Assicurarsi che tutti i test esistenti passino; chiedere all'utente se sorgono dubbi.
