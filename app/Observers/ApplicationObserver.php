@@ -17,7 +17,7 @@ class ApplicationObserver
         $this->logAction($application, 'create');
 
         if ($application->external_technical_email) {
-            $this->sendInvitation($application);
+            //   $this->sendInvitation($application);
         }
     }
 
@@ -29,7 +29,7 @@ class ApplicationObserver
         $this->logAction($application, 'update');
 
         if ($application->wasChanged('external_technical_email') && $application->external_technical_email) {
-            $this->sendInvitation($application);
+            //  $this->sendInvitation($application);
         }
     }
 

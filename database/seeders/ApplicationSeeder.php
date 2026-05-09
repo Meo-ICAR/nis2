@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Application;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 class ApplicationSeeder extends Seeder
 {
@@ -13,8 +14,17 @@ class ApplicationSeeder extends Seeder
      */
     public function run(): void
     {
+        // Disable events to prevent observer from firing during seeding
+        Event::fake();
+
+        // Disable foreign key checks temporarily
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        // Clear the applications table
         DB::table('applications')->delete();
-        DB::table('applications')->truncate();
+
+        // Re-enable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $applications = [
             [
