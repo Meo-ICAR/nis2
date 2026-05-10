@@ -10,7 +10,7 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
-class AuditlogsTable
+class AuditLogsTable
 {
     public static function configure(Table $table): Table
     {

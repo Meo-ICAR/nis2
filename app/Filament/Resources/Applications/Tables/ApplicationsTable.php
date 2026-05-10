@@ -23,33 +23,32 @@ class ApplicationsTable
                 TextColumn::make('category')
                     ->badge()
                     ->color('gray')
+                    ->sortable()
                     ->searchable(),
+                TextColumn::make('internal_technical_contact')
+                    ->label('Referente Tecnico')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('short_name')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('criticality_level')
                     ->label('Criticità NIS2')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'essential' => 'danger',
                         'important' => 'warning',
                         'standard' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'essential' => 'Essenziale',
                         'important' => 'Importante',
                         'standard' => 'Standard',
                         default => $state,
                     })
                     ->sortable(),
-                IconColumn::make('has_mfa')
-                    ->label('MFA')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-shield-check')
-                    ->falseIcon('heroicon-o-shield-exclamation')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
-                IconColumn::make('is_active')
-                    ->label('Attiva')
-                    ->boolean(),
                 IconColumn::make('is_strategic')
                     ->label('Strategica')
                     ->boolean()
@@ -63,11 +62,7 @@ class ApplicationsTable
                     ->label('Scadenza Contratto')
                     ->date()
                     ->sortable()
-                    ->color(fn ($record): string => $record->contractStatus() === 'expired' ? 'danger' : ($record->contractStatus() === 'expiring' ? 'warning' : 'success')),
-                TextColumn::make('internal_technical_contact')
-                    ->label('Referente Tecnico')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->color(fn($record): string => $record->contractStatus() === 'expired' ? 'danger' : ($record->contractStatus() === 'expiring' ? 'warning' : 'success')),
             ])
             ->filters([
                 //
@@ -77,9 +72,9 @@ class ApplicationsTable
                 Action::make('open_management')
                     ->label('Apri Cruscotto')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (Application $record) => $record->management_url)
+                    ->url(fn(Application $record) => $record->management_url)
                     ->openUrlInNewTab()
-                    ->visible(fn (Application $record) => !empty($record->management_url)),
+                    ->visible(fn(Application $record) => !empty($record->management_url)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

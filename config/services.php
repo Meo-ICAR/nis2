@@ -41,6 +41,9 @@ return [
         'client_secret' => env('OIDC_CLIENT_SECRET'),
         'redirect' => env('OIDC_REDIRECT_URI'),
         'scopes' => ['openid', 'profile', 'email', 'internal_user_mgt_list'],
+        // SCIM2 credentials for user management
+        'scim_username' => env('OIDC_SCIM_USERNAME'),
+        'scim_password' => env('OIDC_SCIM_PASSWORD'),
         // Optional: Enable JWT signature verification (default: false)
         // 'verify_jwt' => env('OIDC_VERIFY_JWT', false),
         // Optional: Provide a specific public key for JWT verification

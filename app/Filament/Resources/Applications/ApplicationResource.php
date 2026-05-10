@@ -8,17 +8,18 @@ use App\Filament\Resources\Applications\Pages\ListApplications;
 use App\Filament\Resources\Applications\Schemas\ApplicationForm;
 use App\Filament\Resources\Applications\Tables\ApplicationsTable;
 use App\Models\Application;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 
 class ApplicationResource extends Resource
 {
     protected static ?string $model = Application::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'fas-desktop';
+
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
     {

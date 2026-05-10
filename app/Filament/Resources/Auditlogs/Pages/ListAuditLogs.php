@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\Auditlogs\Pages;
 
-use App\Filament\Resources\Auditlogs\AuditlogResource;
+use App\Filament\Resources\Auditlogs\AuditLogResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
-class ListAuditlogs extends ListRecords
+class ListAuditLogs extends ListRecords
 {
-    protected static string $resource = AuditlogResource::class;
+    protected static string $resource = AuditLogResource::class;
 
     protected function getHeaderActions(): array
     {

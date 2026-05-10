@@ -4,7 +4,7 @@ namespace App\Filament\Resources\Auditlogs\Schemas;
 
 use Filament\Schemas\Schema;
 
-class AuditlogForm
+class AuditLogForm
 {
     public static function configure(Schema $schema): Schema
     {

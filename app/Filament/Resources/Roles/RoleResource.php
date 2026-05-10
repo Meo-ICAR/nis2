@@ -8,17 +8,18 @@ use App\Filament\Resources\Roles\Pages\ListRoles;
 use App\Filament\Resources\Roles\Schemas\RoleForm;
 use App\Filament\Resources\Roles\Tables\RolesTable;
 use App\Models\Role;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 
 class RoleResource extends Resource
 {
     protected static ?string $model = Role::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'fas-user-tag';
+
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
     {

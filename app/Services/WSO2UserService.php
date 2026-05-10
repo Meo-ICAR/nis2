@@ -10,15 +10,14 @@ use Illuminate\Support\Str;
 class WSO2UserService
 {
     private string $baseUrl;
-    private string $clientId;
-    private string $clientSecret;
-    private ?string $accessToken = null;
+    private string $scimUsername;
+    private string $scimPassword;
 
     public function __construct()
     {
         $this->baseUrl = config('services.oidc.base_url');
-        $this->clientId = config('services.oidc.client_id');
-        $this->clientSecret = config('services.oidc.client_secret');
+        $this->scimUsername = config('services.oidc.scim_username') ?: 'tuo_utente_admin';
+        $this->scimPassword = config('services.oidc.scim_password') ?: 'tua_password_admin';
     }
 
     /**
@@ -27,10 +26,7 @@ class WSO2UserService
     public function syncAdminUsers(): array
     {
         try {
-            // Ottieni l'access token
-            $this->authenticate();
-
-            // Scarica gli utenti da WSO2
+            // Scarica gli utenti da WSO2 via SCIM2
             $wso2Users = $this->fetchAdminUsers();
 
             $synced = [];
@@ -39,7 +35,7 @@ class WSO2UserService
 
             foreach ($wso2Users as $wso2User) {
                 $user = $this->createOrUpdateUser($wso2User);
-                
+
                 if ($user->wasRecentlyCreated) {
                     $created++;
                     Log::info("Nuovo utente amministratore creato: {$user->email}");
@@ -59,51 +55,32 @@ class WSO2UserService
                 'updated' => $updated,
                 'total' => count($synced)
             ];
-
         } catch (\Exception $e) {
-            Log::error("Errore durante il sync degli utenti WSO2: " . $e->getMessage());
+            Log::error('Errore durante il sync degli utenti WSO2: ' . $e->getMessage());
             throw $e;
         }
     }
 
     /**
-     * Autentica con WSO2 per ottenere l'access token
-     */
-    private function authenticate(): void
-    {
-        $response = Http::asForm()->post($this->baseUrl . '/oauth2/token', [
-            'grant_type' => 'client_credentials',
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'scope' => 'internal_user_mgt_list'
-        ]);
-
-        if (!$response->successful()) {
-            throw new \Exception("Autenticazione WSO2 fallita: " . $response->body());
-        }
-
-        $data = $response->json();
-        $this->accessToken = $data['access_token'];
-    }
-
-    /**
-     * Scarica gli utenti con privilegi di amministratore da WSO2
+     * Scarica gli utenti con privilegi di amministratore da WSO2 via SCIM2
      */
     private function fetchAdminUsers(): array
     {
-        if (!$this->accessToken) {
-            throw new \Exception("Access token non disponibile");
-        }
-
-        // Endpoint per ottenere la lista degli utenti
-        $response = Http::withToken($this->accessToken)
-            ->get($this->baseUrl . '/api/server/v1/users');
+        $response = Http::withBasicAuth($this->scimUsername, $this->scimPassword)
+            ->withHeaders([
+                'Accept' => 'application/scim+json',
+            ])
+            ->get($this->baseUrl . '/scim2/Users', [
+                'startIndex' => 1,
+                'count' => 100,
+            ]);
 
         if (!$response->successful()) {
-            throw new \Exception("Recupero utenti WSO2 fallito: " . $response->body());
+            throw new \Exception('Recupero utenti WSO2 SCIM2 fallito: ' . $response->body());
         }
 
-        $users = $response->json();
+        $data = $response->json();
+        $users = $data['Resources'] ?? [];
 
         // Filtra solo gli utenti amministratori
         return array_filter($users, function ($user) {
@@ -112,52 +89,53 @@ class WSO2UserService
     }
 
     /**
-     * Verifica se l'utente ha privilegi di amministratore
+     * Verifica se l'utente ha privilegi di amministratore (formato SCIM2)
      */
     private function isAdminUser(array $user): bool
     {
-        // Controlla se l'utente ha il ruolo admin
-        if (isset($user['roles']) && is_array($user['roles'])) {
-            foreach ($user['roles'] as $role) {
-                if (in_array(strtolower($role), ['admin', 'administrator', 'internal/admin'])) {
-                    return true;
-                }
-            }
-        }
-
-        // Controlla claim specifici per admin
-        if (isset($user['claims']) && is_array($user['claims'])) {
-            foreach ($user['claims'] as $claim => $value) {
-                if (in_array(strtolower($claim), ['admin', 'is_admin', 'role']) && 
-                    (is_bool($value) ? $value : in_array(strtolower($value), ['admin', 'true', '1']))) {
+        // Controlla se l'utente ha il ruolo admin in SCIM2 groups
+        if (isset($user['groups']) && is_array($user['groups'])) {
+            foreach ($user['groups'] as $group) {
+                if (isset($group['display']) &&
+                        in_array(strtolower($group['display']), ['admin', 'administrator', 'internal/admin'])) {
                     return true;
                 }
             }
         }
 
         // Controlla il nome utente per pattern admin
-        if (isset($user['username']) && 
-            preg_match('/admin/i', $user['username'])) {
+        if (isset($user['userName']) &&
+                preg_match('/admin/i', $user['userName'])) {
             return true;
+        }
+
+        // Controlla se l'email contiene admin
+        if (isset($user['emails']) && is_array($user['emails'])) {
+            foreach ($user['emails'] as $email) {
+                if (isset($email['value']) &&
+                        preg_match('/admin/i', $email['value'])) {
+                    return true;
+                }
+            }
         }
 
         return false;
     }
 
     /**
-     * Crea o aggiorna un utente nel database locale
+     * Crea o aggiorna un utente nel database locale (formato SCIM2)
      */
     private function createOrUpdateUser(array $wso2User): User
     {
         $email = $this->extractEmail($wso2User);
         $name = $this->extractName($wso2User);
-        $sub = $wso2User['sub'] ?? $wso2User['id'] ?? $wso2User['username'] ?? null;
+        $sub = $wso2User['id'] ?? $wso2User['userName'] ?? null;
 
         return User::updateOrCreate(
-            ['email' => $email],
+            ['sub' => $sub],
             [
                 'name' => $name,
-                'sub' => $sub,
+                'email' => $email,
                 'is_admin' => true,
                 'is_active' => true,
                 'email_verified_at' => now(),
@@ -167,41 +145,51 @@ class WSO2UserService
     }
 
     /**
-     * Estrae l'email dall'utente WSO2
+     * Estrae l'email dall'utente WSO2 (formato SCIM2)
      */
     private function extractEmail(array $user): string
     {
-        // Priorità: email, username con domain, username
-        if (!empty($user['email'])) {
-            return $user['email'];
+        // SCIM2: emails è un array di oggetti con 'value' e 'type'
+        if (isset($user['emails']) && is_array($user['emails'])) {
+            foreach ($user['emails'] as $email) {
+                if (isset($email['value']) && !empty($email['value'])) {
+                    return $email['value'];
+                }
+            }
         }
 
-        $username = $user['username'] ?? $user['name'] ?? 'unknown';
-        
+        // Fallback: userName con domain
+        $username = $user['userName'] ?? $user['name'] ?? 'unknown';
+
         // Se lo username contiene già @, usalo come email
         if (strpos($username, '@') !== false) {
             return $username;
         }
 
         // Altrimenti aggiungi un domain di default
-        return $username . '@wso2.local';
+        return $username . '@icar.cnr.it';
     }
 
     /**
-     * Estrae il nome completo dall'utente WSO2
+     * Estrae il nome completo dall'utente WSO2 (formato SCIM2)
      */
     private function extractName(array $user): string
     {
-        // Priorità: displayName, givenName + familyName, username
+        // SCIM2: displayName è il campo principale
         if (!empty($user['displayName'])) {
             return $user['displayName'];
         }
 
-        if (!empty($user['givenName']) || !empty($user['familyName'])) {
-            return trim(($user['givenName'] ?? '') . ' ' . ($user['familyName'] ?? ''));
+        // SCIM2: name è un oggetto con givenName e familyName
+        if (isset($user['name']) && is_array($user['name'])) {
+            $nameObj = $user['name'];
+            if (!empty($nameObj['givenName']) || !empty($nameObj['familyName'])) {
+                return trim(($nameObj['givenName'] ?? '') . ' ' . ($nameObj['familyName'] ?? ''));
+            }
         }
 
-        return $user['username'] ?? $user['name'] ?? 'Unknown User';
+        // Fallback: userName
+        return $user['userName'] ?? $user['name'] ?? 'Unknown User';
     }
 
     /**
@@ -211,7 +199,7 @@ class WSO2UserService
     {
         $totalAdmins = User::where('is_admin', true)->count();
         $activeAdmins = User::where('is_admin', true)->where('is_active', true)->count();
-        
+
         return [
             'total_admins' => $totalAdmins,
             'active_admins' => $activeAdmins,

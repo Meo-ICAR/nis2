@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 
 class Application extends Model
@@ -37,6 +37,8 @@ class Application extends Model
         'hosting_type',
         'has_mfa',
         'backup_strategy',
+        'backup_replication',
+        'url_job_anonimization_db',
         'management_url',
         'service_tag',
         'external_id',
@@ -60,9 +62,9 @@ class Application extends Model
     protected function casts(): array
     {
         return [
-            'is_active'               => 'boolean',
-            'is_strategic'            => 'boolean',
-            'has_mfa'                 => 'boolean',
+            'is_active' => 'boolean',
+            'is_strategic' => 'boolean',
+            'has_mfa' => 'boolean',
             'support_contract_expiry' => 'date',
         ];
     }
