@@ -105,7 +105,7 @@ class ApplicationSeeder extends Seeder
                 'client_id' => 'powerscale-api-client',
                 'client_secret' => 'encrypted_secret_placeholder',
             ],
-                  [
+            [
                 'name' => 'SonicWall Firewall Management',
                 'short_name' => 'SonicWall-FW',
                 'description' => 'Sistema di gestione firewall next-generation con protezione avanzata, analytics di flusso e gestione centralizzata per switch e access point SonicWall.',
@@ -114,7 +114,7 @@ class ApplicationSeeder extends Seeder
                 'category' => 'Network Security',
                 'icon_url' => 'https://example.com/icons/sonicwall.png',
                 'url_documentation' => 'https://www.sonicwall.com/products/firewalls',
-                'sort_order => 3,
+                'sort_order' => 3,
                 'is_active' => true,
                 'is_strategic' => true,
                 'scientific_owner' => 'Security Team',
@@ -143,7 +143,6 @@ class ApplicationSeeder extends Seeder
                 'client_id' => 'sonicwall-gms-client',
                 'client_secret' => 'encrypted_secret_placeholder',
             ],
-
             [
                 'name' => 'Dashboard VM e Container',
                 'short_name' => 'vSphere',
@@ -250,7 +249,7 @@ class ApplicationSeeder extends Seeder
                 'client_id' => 'grafana-oauth-client',
                 'client_secret' => 'encrypted_secret_placeholder',
             ],
-              [
+            [
                 'name' => 'Kibana Dashboard',
                 'short_name' => 'Kibana',
                 'description' => 'Piattaforma open source di observability per monitoring, visualizzazione metriche, alerting e dashboard personalizzabili con integrazione AI.',
