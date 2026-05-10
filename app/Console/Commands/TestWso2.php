@@ -13,20 +13,31 @@ class TestWso2 extends Command
     public function handle(Wso2Service $wso2Service)
     {
         $this->info('Chiamata a WSO2 in corso...');
-
         $results = $wso2Service->getUsersList();
 
         if (isset($results['Resources'])) {
             $this->info('Successo! Trovati ' . count($results['Resources']) . ' utenti.');
 
-            $headers = ['ID', 'UserName'];
+            $headers = ['ID', 'UserName', 'Email'];
+
             $data = collect($results['Resources'])->map(function ($user) {
-                return [$user['id'], $user['userName']];
+                // Estraiamo l'email dall'array SCIM
+                $email = 'N/A';
+                if (!empty($user['emails'])) {
+                    // Prende la prima email disponibile
+                    $email = is_array($user['emails'][0]) ? $user['emails'][0]['value'] : $user['emails'][0];
+                }
+
+                return [
+                    $user['id'],
+                    $user['userName'],
+                    $email
+                ];
             });
 
             $this->table($headers, $data);
         } else {
-            $this->error('Errore durante il recupero.');
+            $this->error('Nessuna risorsa trovata.');
             $this->line(json_encode($results, JSON_PRETTY_PRINT));
         }
     }

@@ -13,32 +13,17 @@ class Wso2Service
         $clientId = config('services.wso2.client_id');
         $clientSecret = config('services.wso2.client_secret');
 
-        // Debug: Verifica che le variabili siano caricate
-        if (!$baseUrl || !$clientId || !$clientSecret) {
-            dd('ERRORE CONFIGURAZIONE: Controlla il file .env', [
-                'base_url' => $baseUrl,
-                'client_id' => $clientId,
-                'secret_presente' => !empty($clientSecret)
-            ]);
-        }
-
-        // 1. Richiesta Token
+        // 1. Richiesta Token con entrambi gli scope (List e View)
         $tokenResponse = Http::asForm()
-            ->withOptions(['verify' => false])  // Ignora certificati SSL non validi localmente
+            ->withOptions(['verify' => false])
             ->withBasicAuth($clientId, $clientSecret)
             ->post($baseUrl . '/oauth2/token', [
                 'grant_type' => 'client_credentials',
-                'scope' => 'internal_user_mgt_list',
+                'scope' => 'internal_user_mgt_list internal_user_mgt_view',
             ]);
 
         if ($tokenResponse->failed()) {
-            // DEBUG ATTIVO: Se il token fallisce, interrompe l'esecuzione e mostra il motivo
-            dd('WSO2 TOKEN FAILED', [
-                'Status' => $tokenResponse->status(),
-                'Response' => $tokenResponse->json() ?? $tokenResponse->body(),
-                'URL' => $baseUrl . '/oauth2/token',
-                'Client_ID' => $clientId
-            ]);
+            dd('ERRORE TOKEN', $tokenResponse->json() ?: $tokenResponse->body());
         }
 
         $accessToken = $tokenResponse->json()['access_token'];
@@ -49,13 +34,34 @@ class Wso2Service
             ->get($baseUrl . '/scim2/Users');
 
         if ($usersResponse->failed()) {
-            dd('WSO2 SCIM FAILED', [
-                'Status' => $usersResponse->status(),
-                'Response' => $usersResponse->json() ?? $usersResponse->body(),
-                'Token_Usato' => substr($accessToken, 0, 10) . '...'
-            ]);
+            dd('ERRORE SCIM', $usersResponse->json() ?: $usersResponse->body());
         }
 
         return $usersResponse->json();
+    }
+
+    public function getApplicationsList()
+    {
+        // Richiediamo il token con lo scope delle applicazioni
+        $token = $this->getAccessToken('internal_application_mgt_view');
+
+        if (!$token)
+            return ['error' => 'Token fallito'];
+
+        // L'endpoint delle applicazioni in WSO2 è solitamente questo:
+        $appUrl = config('services.wso2.base_url') . '/api/server/v1/applications';
+
+        $response = Http::withToken($token)
+            ->withOptions(['verify' => false])
+            ->get($appUrl);
+
+        if ($response->failed()) {
+            return [
+                'error' => 'Chiamata API fallita',
+                'details' => $response->json() ?: $response->body()
+            ];
+        }
+
+        return $response->json();
     }
 }
