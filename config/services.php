@@ -35,6 +35,13 @@ return [
         'client_secret' => env('OIDC_CLIENT_SECRET'),
         'redirect' => env('OIDC_REDIRECT_URI'),
     ],
+    'wso2' => [
+        'client_id' => env('OIDC_CLIENT_ID'),
+        'client_secret' => env('OIDC_CLIENT_SECRET'),
+        'token_url' => env('OIDC_PATH_URL') . '/oauth2/token',
+        'scim_url' => env('OIDC_PATH_URL') . '/scim2/Users',
+        'base_url' => env('OIDC_PATH_URL'),
+    ],
     'oidc' => [
         'base_url' => env('OIDC_BASE_URL'),
         'client_id' => env('OIDC_CLIENT_ID'),
