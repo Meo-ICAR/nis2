@@ -4,12 +4,13 @@ namespace App\Filament\Resources\Incidents\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 
 class IncidentForm
@@ -57,7 +58,7 @@ class IncidentForm
                                             ->label('Referenti Applicazione')
                                             ->readOnly()
                                             ->rows(3)
-                                            ->visible(fn ($get) => $get('application_id'))
+                                            ->visible(fn($get) => $get('application_id'))
                                             ->columnSpanFull(),
                                         Select::make('incident_type')
                                             ->label('Tipo di Incidente')
@@ -105,7 +106,7 @@ class IncidentForm
                             ->icon('heroicon-o-megaphone')
                             ->schema([
                                 Section::make()
-                                    ->description('Dettagli per la notifica all\'Agenzia per la Cybersicurezza Nazionale')
+                                    ->description("Dettagli per la notifica all'Agenzia per la Cybersicurezza Nazionale")
                                     ->columns(2)
                                     ->schema([
                                         Toggle::make('acn_notified')
@@ -113,10 +114,10 @@ class IncidentForm
                                             ->reactive(),
                                         DateTimePicker::make('acn_notification_date')
                                             ->label('Data Notifica')
-                                            ->visible(fn ($get) => $get('acn_notified')),
+                                            ->visible(fn($get) => $get('acn_notified')),
                                         TextInput::make('acn_protocol_number')
                                             ->label('Numero Protocollo')
-                                            ->visible(fn ($get) => $get('acn_notified')),
+                                            ->visible(fn($get) => $get('acn_notified')),
                                     ]),
                             ]),
                         Tab::make('Analisi Impatto')
@@ -125,8 +126,48 @@ class IncidentForm
                                 Section::make()
                                     ->schema([
                                         Textarea::make('impact_analysis')
-                                            ->label('Analisi dell\'Impatto')
-                                            ->placeholder('Descrivi l\'impatto tecnico e di business...'),
+                                            ->label("Analisi dell'Impatto")
+                                            ->placeholder("Descrivi l'impatto tecnico e di business..."),
+                                    ]),
+                            ]),
+                        Tab::make('Prove e Documenti')
+                            ->icon('fas-folder-open')
+                            ->schema([
+                                Section::make("Prove dell'Incidente")
+                                    ->description("Carica log, screenshot, email e altre prove relative all'incidente.")
+                                    ->icon('fas-file-contract')
+                                    ->schema([
+                                        SpatieMediaLibraryFileUpload::make('evidence')
+                                            ->label('Prove e Documentazione')
+                                            ->collection('evidence')
+                                            ->multiple()
+                                            ->directory('incidents/evidence')
+                                            ->visibility('private')
+                                            ->maxSize(20480)  // 20MB
+                                            ->acceptedFileTypes(['application/pdf', 'image/*', 'text/plain', 'application/zip', 'application/x-zip-compressed'])
+                                            ->helperText('Carica log, screenshot, email, file di testo o archivi ZIP. Max 20MB per file.')
+                                            ->columnSpanFull(),
+                                        SpatieMediaLibraryFileUpload::make('screenshots')
+                                            ->label('Screenshot e Immagini')
+                                            ->collection('screenshots')
+                                            ->multiple()
+                                            ->directory('incidents/screenshots')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->maxSize(5120)  // 5MB
+                                            ->acceptedFileTypes(['image/*'])
+                                            ->helperText("Carica screenshot dell'errore o dell'impatto. Max 5MB per immagine.")
+                                            ->columnSpanFull(),
+                                        SpatieMediaLibraryFileUpload::make('reports')
+                                            ->label('Report di Analisi')
+                                            ->collection('reports')
+                                            ->multiple()
+                                            ->directory('incidents/reports')
+                                            ->visibility('private')
+                                            ->maxSize(10240)  // 10MB
+                                            ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.*'])
+                                            ->helperText('Carica report post-incident, analisi cause o documenti di follow-up. Max 10MB per file.')
+                                            ->columnSpanFull(),
                                     ]),
                             ]),
                     ]),

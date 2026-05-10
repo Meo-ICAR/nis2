@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Application extends Model
+class Application extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+
     /**
      * The "booted" method of the model.
      */

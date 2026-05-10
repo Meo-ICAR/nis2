@@ -4,11 +4,12 @@ namespace App\Filament\Resources\MaintenanceInterventions\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 
 class MaintenanceInterventionForm
@@ -60,7 +61,7 @@ class MaintenanceInterventionForm
                                             ->label('Referenti Applicazione')
                                             ->readOnly()
                                             ->rows(3)
-                                            ->visible(fn ($get) => $get('application_id'))
+                                            ->visible(fn($get) => $get('application_id'))
                                             ->columnSpanFull(),
                                         Select::make('suggest_contact')
                                             ->label('💡 Suggerisci da Rubrica')
@@ -113,6 +114,46 @@ class MaintenanceInterventionForm
                                             ->required(),
                                         Textarea::make('notes')
                                             ->label('Note')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
+                        Tab::make('Documenti')
+                            ->icon('fas-file-alt')
+                            ->schema([
+                                Section::make('Documentazione Manutenzione')
+                                    ->description("Carica report, foto, documentazione tecnica e certificati relativi all'intervento.")
+                                    ->icon('fas-tools')
+                                    ->schema([
+                                        SpatieMediaLibraryFileUpload::make('reports')
+                                            ->label('Report di Intervento')
+                                            ->collection('reports')
+                                            ->multiple()
+                                            ->directory('maintenance/reports')
+                                            ->visibility('private')
+                                            ->maxSize(10240)  // 10MB
+                                            ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.*'])
+                                            ->helperText('Carica report tecnici, verbali intervento, documentazione. Max 10MB per file.')
+                                            ->columnSpanFull(),
+                                        SpatieMediaLibraryFileUpload::make('photos')
+                                            ->label('Foto e Immagini')
+                                            ->collection('photos')
+                                            ->multiple()
+                                            ->directory('maintenance/photos')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->maxSize(5120)  // 5MB
+                                            ->acceptedFileTypes(['image/*'])
+                                            ->helperText('Carica foto prima/dopo, dettagli tecnici, stato apparecchiature. Max 5MB per immagine.')
+                                            ->columnSpanFull(),
+                                        SpatieMediaLibraryFileUpload::make('certificates')
+                                            ->label('Certificati e Conformità')
+                                            ->collection('certificates')
+                                            ->multiple()
+                                            ->directory('maintenance/certificates')
+                                            ->visibility('private')
+                                            ->maxSize(5120)  // 5MB
+                                            ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                            ->helperText('Carica certificati di conformità, collaudi, documentazione normativa. Max 5MB per file.')
                                             ->columnSpanFull(),
                                     ]),
                             ]),

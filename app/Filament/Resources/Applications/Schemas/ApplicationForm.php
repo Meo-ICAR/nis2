@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Applications\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -320,17 +321,17 @@ class ApplicationForm
                                             ->reactive(),
                                         TextInput::make('webhook_token')
                                             ->label('Webhook Token')
-                                            ->helperText("Usa questo token per inviare allarmi a: /api/v1/webhooks/{token}")
+                                            ->helperText('Usa questo token per inviare allarmi a: /api/v1/webhooks/{token}')
                                             ->readOnly()
-                                            ->extraInputAttributes(['onclick' => "this.select()"])
+                                            ->extraInputAttributes(['onclick' => 'this.select()'])
                                             ->hintAction(
                                                 \Filament\Actions\Action::make('generateToken')
                                                     ->icon('fas-sync')
-                                                    ->action(fn ($set) => $set('webhook_token', (string) \Illuminate\Support\Str::uuid()))
+                                                    ->action(fn($set) => $set('webhook_token', (string) \Illuminate\Support\Str::uuid()))
                                             )
                                             ->prefixIcon('fas-key'),
                                         Section::make('WSO2 Configuration')
-                                            ->visible(fn ($get) => $get('connector_type') === 'wso2')
+                                            ->visible(fn($get) => $get('connector_type') === 'wso2')
                                             ->columns(2)
                                             ->schema([
                                                 TextInput::make('wso2_base_url')
@@ -347,6 +348,46 @@ class ApplicationForm
                                             ->helperText('Parametri extra in formato JSON per il connettore.')
                                             ->columnSpanFull()
                                             ->rows(4),
+                                    ]),
+                            ]),
+                        Tab::make('Documenti')
+                            ->icon('fas-file-alt')
+                            ->schema([
+                                Section::make('Allegati')
+                                    ->description("Carica documenti, immagini e altri file relativi all'applicazione.")
+                                    ->icon('fas-paperclip')
+                                    ->schema([
+                                        SpatieMediaLibraryFileUpload::make('documents')
+                                            ->label('Documenti e Allegati')
+                                            ->collection('documents')
+                                            ->multiple()
+                                            ->directory('applications/documents')
+                                            ->visibility('private')
+                                            ->maxSize(10240)  // 10MB
+                                            ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.*', 'text/plain'])
+                                            ->helperText('Carica documenti PDF, immagini, Word o file di testo. Max 10MB per file.')
+                                            ->columnSpanFull(),
+                                        SpatieMediaLibraryFileUpload::make('screenshots')
+                                            ->label('Screenshot e Immagini')
+                                            ->collection('screenshots')
+                                            ->multiple()
+                                            ->directory('applications/screenshots')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->maxSize(5120)  // 5MB
+                                            ->acceptedFileTypes(['image/*'])
+                                            ->helperText("Carica screenshot o immagini dell'interfaccia. Max 5MB per immagine.")
+                                            ->columnSpanFull(),
+                                        SpatieMediaLibraryFileUpload::make('contracts')
+                                            ->label('Contratti e Documenti Legali')
+                                            ->collection('contracts')
+                                            ->multiple()
+                                            ->directory('applications/contracts')
+                                            ->visibility('private')
+                                            ->maxSize(15360)  // 15MB
+                                            ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.*'])
+                                            ->helperText('Carica contratti, SLA, documenti legali. Max 15MB per file.')
+                                            ->columnSpanFull(),
                                     ]),
                             ]),
                     ])

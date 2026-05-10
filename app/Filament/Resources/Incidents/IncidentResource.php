@@ -20,6 +20,8 @@ class IncidentResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'NIS2 Compliance';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     public static function form(Schema $schema): Schema
     {
         return IncidentForm::configure($schema);

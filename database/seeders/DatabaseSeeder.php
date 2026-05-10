@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ApplicationSeeder::class,
+            ComplianceSeeder::class,
         ]);
 
         // User::factory(10)->create();

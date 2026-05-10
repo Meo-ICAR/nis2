@@ -51,6 +51,7 @@ class ApplicationsTable
                     ->sortable(),
                 IconColumn::make('is_strategic')
                     ->label('Strategica')
+                    ->sortable()
                     ->boolean()
                     ->trueIcon('heroicon-o-star')
                     ->falseIcon('')
