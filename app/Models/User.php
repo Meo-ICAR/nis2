@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -39,6 +40,10 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        static::addGlobalScope('orderByName', function (Builder $builder) {
+            $builder->orderBy('name', 'asc');
+        });
+
         static::creating(function (User $user) {
             // Se il nome è vuoto o null, assegnagli il valore dell'email
             if (empty($user->name)) {

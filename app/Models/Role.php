@@ -2,11 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends Model
 {
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('orderByName', function (Builder $builder) {
+            $builder->orderBy('name', 'asc');
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *

@@ -10,7 +10,10 @@ use Laravel\Socialite\Facades\Socialite;
 
 // use Laravel\Socialite\Socialite;
 
-Route::redirect('/', '/admin');
+Route::get('/', function () {
+    $strategicApplications = \App\Models\Application::where('is_strategic', true)->get();
+    return view('welcome', compact('strategicApplications'));
+});
 
 /*
  * Route::get('/', function () {

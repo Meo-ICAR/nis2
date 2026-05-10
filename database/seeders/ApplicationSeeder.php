@@ -6,6 +6,7 @@ use App\Models\Application;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 
 class ApplicationSeeder extends Seeder
 {
@@ -26,7 +27,7 @@ class ApplicationSeeder extends Seeder
         // Re-enable foreign key checks
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $applications = [
+          $application0s = [
             [
                 'name' => 'DELL EMC Storage Manager',
                 'short_name' => 'EMC-Storage',
@@ -541,10 +542,134 @@ class ApplicationSeeder extends Seeder
             ],
         ];
 
-        foreach ($applications as $app) {
+        $applications = [
+            [
+                'name' => 'OPEN SCIENCE CLOUD',
+                'short_name' => 'FOSSR-Cloud',
+                'description' => 'Infrastruttura cloud per l\'archiviazione, gestione e condivisione di dati delle scienze sociali secondo i principi FAIR. Integra nodi di calcolo distribuito e storage ad alta capacità.',
+                'url' => 'https://cloud.fossr.eu',
+                'category' => 'Cloud & Storage',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => true,
+                'criticality_level' => 'essential',
+                'hosting_type' => 'hybrid',
+                'runtime_type' => 'container',
+            ],
+            [
+                'name' => 'ITALIAN ONLINE PROBABILITY PANEL (IOPP)',
+                'short_name' => 'IOPP',
+                'description' => 'Panel di indagine online composto da un campione probabilistico della popolazione italiana per ricerche sociali longitudinali ad alta affidabilità statistica.',
+                'url' => 'https://iopp.fossr.it',
+                'category' => 'Data Collection',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => true,
+                'criticality_level' => 'important',
+                'hosting_type' => 'IASS',
+                'runtime_type' => 'vm',
+            ],
+            [
+                'name' => 'ONLINE RESEARCH PANEL (ORP)',
+                'short_name' => 'ORP',
+                'description' => 'Piattaforma digitale per la raccolta dati su larga scala tramite sondaggi online flessibili e campionamenti specializzati.',
+                'url' => 'https://orp.fossr.eu',
+                'category' => 'Data Collection',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => false,
+                'criticality_level' => 'standard',
+                'hosting_type' => 'CASS',
+                'runtime_type' => 'container',
+            ],
+            [
+                'name' => 'POLICY LEARNING PLATFORM (PLP)',
+                'short_name' => 'PLP',
+                'description' => 'Ambiente digitale per connettere ricerca sociale e policy-making, fornendo insight basati sui dati e strumenti di simulazione dell\'impatto delle politiche pubbliche.',
+                'url' => 'https://plp.fossr.eu',
+                'category' => 'Policy Support',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => true,
+                'criticality_level' => 'important',
+                'hosting_type' => 'IASS',
+                'runtime_type' => 'vm',
+            ],
+            [
+                'name' => 'SYNTHETIC POPULATIONS GENERATOR (SPG)',
+                'short_name' => 'SPG',
+                'description' => 'Generatore di micro-dati sintetici che rispecchiano le caratteristiche reali della popolazione senza compromettere la privacy, ideale per modelli basati su agenti.',
+                'url' => 'https://spg.fossr.eu',
+                'category' => 'Data Synthesis',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => false,
+                'criticality_level' => 'standard',
+                'hosting_type' => 'CASS',
+                'runtime_type' => 'container',
+            ],
+            [
+                'name' => 'VIRTUAL RESEARCH ENVIRONMENT (VRE)',
+                'short_name' => 'VRE',
+                'description' => 'Spazio di lavoro collaborativo basato sul web (JupyterHub) con strumenti di analisi integrati (R, Python) per la ricerca riproducibile.',
+                'url' => 'https://vre.fossr.eu',
+                'category' => 'Research Tools',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => true,
+                'criticality_level' => 'essential',
+                'hosting_type' => 'HPC',
+                'runtime_type' => 'container',
+            ],
+            [
+                'name' => 'GENERATIONS AND GENDER SURVEY - ROUND II (GGS-II)',
+                'short_name' => 'GGS-II',
+                'description' => 'Indagine longitudinale su larga scala sulle dinamiche familiari, fertilità e relazioni di genere attraverso il corso della vita.',
+                'url' => 'https://ggs.fossr.eu',
+                'category' => 'Survey',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => false,
+                'criticality_level' => 'important',
+                'hosting_type' => 'IASS',
+                'runtime_type' => 'vm',
+            ],
+            [
+                'name' => 'GROWING UP IN DIGITAL EUROPE (GUIDE)',
+                'short_name' => 'GUIDE',
+                'description' => 'Studio longitudinale paneuropeo focalizzato sul benessere dei bambini e dei giovani nella società digitale.',
+                'url' => 'https://guide.fossr.eu',
+                'category' => 'Survey',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => false,
+                'criticality_level' => 'important',
+                'hosting_type' => 'IASS',
+                'runtime_type' => 'vm',
+            ],
+            [
+                'name' => 'SURVEY ON HEALTH, AGEING AND RETIREMENT IN EUROPE (SHARE)',
+                'short_name' => 'SHARE',
+                'description' => 'Database multidisciplinare di micro-dati su salute, stato socio-economico e reti sociali di individui over 50 in Europa.',
+                'url' => 'https://share.fossr.eu',
+                'category' => 'Survey',
+                'project' => 'FOSSR',
+                'is_active' => true,
+                'is_strategic' => true,
+                'criticality_level' => 'essential',
+                'hosting_type' => 'IASS',
+                'runtime_type' => 'vm',
+            ],
+        ];
+
+         foreach ($application0s as $app) {
+            $app['webhook_token'] = (string) Str::uuid();
             Application::create($app);
         }
 
-        $this->command->info('Created ' . count($applications) . ' applications successfully!');
+        foreach ($applications as $app) {
+            $app['webhook_token'] = (string) Str::uuid();
+            Application::create($app);
+        }
     }
 }

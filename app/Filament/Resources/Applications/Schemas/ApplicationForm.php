@@ -239,6 +239,24 @@ class ApplicationForm
                                 Section::make('Referenti Interni')
                                     ->columns(2)
                                     ->schema([
+                                        Select::make('suggest_internal')
+                                            ->label('💡 Suggerisci da Rubrica')
+                                            ->options(\App\Models\Contact::all()->pluck('name', 'id'))
+                                            ->searchable()
+                                            ->dehydrated(false)
+                                            ->columnSpanFull()
+                                            ->reactive()
+                                            ->afterStateUpdated(function ($state, $set) {
+                                                if ($state) {
+                                                    $contact = \App\Models\Contact::find($state);
+                                                    if ($contact) {
+                                                        // This is a generic suggestion, we fill the focused field or all?
+                                                        // Let's fill the nearest logic.
+                                                        $set('scientific_owner', $contact->name);
+                                                    }
+                                                }
+                                            })
+                                            ->hint('Seleziona un contatto per precaricare il nome'),
                                         TextInput::make('scientific_owner')
                                             ->label('Proprietario Business (Owner)')
                                             ->prefixIcon('fas-user'),
@@ -253,6 +271,22 @@ class ApplicationForm
                                 Section::make('Supporto Esterno & Contratti')
                                     ->columns(2)
                                     ->schema([
+                                        Select::make('suggest_external')
+                                            ->label('💡 Suggerisci da Rubrica')
+                                            ->options(\App\Models\Contact::all()->pluck('name', 'id'))
+                                            ->searchable()
+                                            ->dehydrated(false)
+                                            ->columnSpanFull()
+                                            ->reactive()
+                                            ->afterStateUpdated(function ($state, $set) {
+                                                if ($state) {
+                                                    $contact = \App\Models\Contact::find($state);
+                                                    if ($contact) {
+                                                        $set('external_technical_contact', $contact->name);
+                                                        $set('external_technical_email', $contact->email);
+                                                    }
+                                                }
+                                            }),
                                         TextInput::make('external_technical_contact')
                                             ->label('Supporto Vendor')
                                             ->prefixIcon('fas-file-contract'),
@@ -266,6 +300,53 @@ class ApplicationForm
                                         Textarea::make('contract_notes')
                                             ->label('Note Contrattuali')
                                             ->columnSpanFull(),
+                                    ]),
+                            ]),
+                        Tab::make('Integrazione & API')
+                            ->icon('fas-network-wired')
+                            ->schema([
+                                Section::make('Configurazione HUB')
+                                    ->description("Configura come questo HUB si collega o riceve dati dall'applicazione.")
+                                    ->columns(2)
+                                    ->schema([
+                                        Select::make('connector_type')
+                                            ->label('Tipo Connettore (Strategy)')
+                                            ->options([
+                                                'generic_rest' => 'Generic REST API',
+                                                'hpc' => 'HPC Cluster Connector',
+                                                'wso2' => 'WSO2 Identity Manager',
+                                            ])
+                                            ->prefixIcon('fas-plug')
+                                            ->reactive(),
+                                        TextInput::make('webhook_token')
+                                            ->label('Webhook Token')
+                                            ->helperText("Usa questo token per inviare allarmi a: /api/v1/webhooks/{token}")
+                                            ->readOnly()
+                                            ->extraInputAttributes(['onclick' => "this.select()"])
+                                            ->hintAction(
+                                                \Filament\Actions\Action::make('generateToken')
+                                                    ->icon('fas-sync')
+                                                    ->action(fn ($set) => $set('webhook_token', (string) \Illuminate\Support\Str::uuid()))
+                                            )
+                                            ->prefixIcon('fas-key'),
+                                        Section::make('WSO2 Configuration')
+                                            ->visible(fn ($get) => $get('connector_type') === 'wso2')
+                                            ->columns(2)
+                                            ->schema([
+                                                TextInput::make('wso2_base_url')
+                                                    ->label('WSO2 Base URL')
+                                                    ->placeholder('https://is.company.com:9443')
+                                                    ->prefixIcon('fas-link'),
+                                                TextInput::make('wso2_tenant_domain')
+                                                    ->label('WSO2 Tenant Domain')
+                                                    ->placeholder('carbon.super')
+                                                    ->prefixIcon('fas-building'),
+                                            ]),
+                                        Textarea::make('integration_config')
+                                            ->label('Configurazione JSON')
+                                            ->helperText('Parametri extra in formato JSON per il connettore.')
+                                            ->columnSpanFull()
+                                            ->rows(4),
                                     ]),
                             ]),
                     ])

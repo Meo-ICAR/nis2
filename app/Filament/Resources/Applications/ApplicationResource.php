@@ -34,7 +34,9 @@ class ApplicationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\VulnerabilitiesRelationManager::class,
+            RelationManagers\IncidentsRelationManager::class,
+            RelationManagers\MaintenanceInterventionsRelationManager::class,
         ];
     }
 

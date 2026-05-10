@@ -10,6 +10,16 @@ use Illuminate\Support\Carbon;
 class Application extends Model
 {
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('orderByName', function (Builder $builder) {
+            $builder->orderBy('name', 'asc');
+        });
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -52,6 +62,11 @@ class Application extends Model
         'contract_notes',
         'client_id',
         'client_secret',
+        'connector_type',
+        'webhook_token',
+        'integration_config',
+        'wso2_base_url',
+        'wso2_tenant_domain',
     ];
 
     /**
@@ -66,6 +81,7 @@ class Application extends Model
             'is_strategic' => 'boolean',
             'has_mfa' => 'boolean',
             'support_contract_expiry' => 'date',
+            'integration_config' => 'array',
         ];
     }
 
@@ -87,6 +103,30 @@ class Application extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_application');
+    }
+
+    /**
+     * The vulnerabilities associated with this application.
+     */
+    public function vulnerabilities(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Vulnerability::class);
+    }
+
+    /**
+     * The incidents associated with this application.
+     */
+    public function incidents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Incident::class);
+    }
+
+    /**
+     * The maintenance interventions associated with this application.
+     */
+    public function maintenanceInterventions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MaintenanceIntervention::class);
     }
 
     // -------------------------------------------------------------------------
