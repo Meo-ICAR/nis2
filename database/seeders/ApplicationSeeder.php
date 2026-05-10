@@ -6,6 +6,7 @@ use App\Models\Application;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class ApplicationSeeder extends Seeder
@@ -27,7 +28,7 @@ class ApplicationSeeder extends Seeder
         // Re-enable foreign key checks
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-          $application0s = [
+        $application0s = [
             [
                 'name' => 'DELL EMC Storage Manager',
                 'short_name' => 'EMC-Storage',
@@ -546,7 +547,7 @@ class ApplicationSeeder extends Seeder
             [
                 'name' => 'OPEN SCIENCE CLOUD',
                 'short_name' => 'FOSSR-Cloud',
-                'description' => 'Infrastruttura cloud per l\'archiviazione, gestione e condivisione di dati delle scienze sociali secondo i principi FAIR. Integra nodi di calcolo distribuito e storage ad alta capacità.',
+                'description' => "Infrastruttura cloud per l'archiviazione, gestione e condivisione di dati delle scienze sociali secondo i principi FAIR. Integra nodi di calcolo distribuito e storage ad alta capacità.",
                 'url' => 'https://cloud.fossr.eu',
                 'category' => 'Cloud & Storage',
                 'project' => 'FOSSR',
@@ -585,7 +586,7 @@ class ApplicationSeeder extends Seeder
             [
                 'name' => 'POLICY LEARNING PLATFORM (PLP)',
                 'short_name' => 'PLP',
-                'description' => 'Ambiente digitale per connettere ricerca sociale e policy-making, fornendo insight basati sui dati e strumenti di simulazione dell\'impatto delle politiche pubbliche.',
+                'description' => "Ambiente digitale per connettere ricerca sociale e policy-making, fornendo insight basati sui dati e strumenti di simulazione dell'impatto delle politiche pubbliche.",
                 'url' => 'https://plp.fossr.eu',
                 'category' => 'Policy Support',
                 'project' => 'FOSSR',
@@ -662,7 +663,7 @@ class ApplicationSeeder extends Seeder
             ],
         ];
 
-         foreach ($application0s as $app) {
+        foreach ($application0s as $app) {
             $app['webhook_token'] = (string) Str::uuid();
             Application::create($app);
         }
