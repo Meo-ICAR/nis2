@@ -3,109 +3,131 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class DellOmeService
 {
     protected string $baseUrl;
-    protected string $user;
-    protected string $pass;
+    protected string $username;
+    protected string $password;
 
     public function __construct()
     {
-        $this->baseUrl = "https://" . config('services.dell.ip');
-        $this->user = config('services.dell.user');
-        $this->pass = config('services.dell.pass');
+        $this->baseUrl = 'https://' . config('dell.ip', env('DELL_OME_IP')) . '/api';
+        $this->username = config('dell.user', env('DELL_OME_USER'));
+        $this->password = config('dell.pass', env('DELL_OME_PASS'));
     }
 
     /**
-     * Gestisce l'autenticazione tramite Session Cookie.
-     * Salva il token in cache per 30 minuti.
+     * Recupera i dati automatizzando la ricerca del Report ID corretto.
      */
-    private function getSessionToken(): ?string
+    public function getInventoryWithWarranty()
     {
-        return Cache::remember('dell_ome_token', 1800, function () {
-            $response = Http::withoutVerifying()
-                ->post("{$this->baseUrl}/api/SessionService/Sessions", [
-                    'UserName' => $this->user,
-                    'Password' => $this->pass,
-                    'SessionType' => 'API',
-                ]);
-
-            if ($response->successful()) {
-                return $response->header('X-Auth-Token');
-            }
-
-            Log::error("Dell OME Login fallito: " . $response->body());
-            return null;
-        });
-    }
-
-    /**
-     * Esporta l'inventario completo sincronizzato con le garanzie.
-     */
-    public function getFullAssetExport()
-    {
-        $token = $this->getSessionToken();
+        $token = $this->generateSessionToken();
 
         if (!$token) {
-            return collect([]);
+            return ['error' => 'Autenticazione fallita su Dell OME'];
         }
 
-        // 1. Recupero Dispositivi (Filtriamo solo i Server per efficienza)
-        $devicesReq = Http::withoutVerifying()
-            ->withHeaders(['X-Auth-Token' => $token])
-            ->get("{$this->baseUrl}/api/DeviceService/Devices", [
-                '$filter' => "Type eq 'Server'",
-                '$select' => "Id,DeviceName,Model,ServiceTag,IPAddress,Status"
-            ]);
+        // 1. Determina dinamicamente l'ID del report "Warranty"
+        $reportId = $this->findWarrantyReportId($token);
 
-        // 2. Recupero Garanzie (Endpoint AssetAdvisor)
-        $warrantyReq = Http::withoutVerifying()
-            ->withHeaders(['X-Auth-Token' => $token])
-            ->get("{$this->baseUrl}/api/AssetAdvisorService/Warranties");
-
-        if (!$devicesReq->successful()) {
-            return collect([]);
+        if (!$reportId) {
+            return ['error' => 'Report "Warranty" non trovato nel sistema'];
         }
 
-        $devices = $devicesReq->json()['value'] ?? [];
-        $warranties = collect($warrantyReq->json()['value'] ?? []);
+        // 2. Esegue il report trovato per ottenere Service Tag e IP popolati
+        $response = Http::withOptions(['verify' => false])
+            ->withHeaders(['X-Auth-Token' => $token])
+            ->get("{$this->baseUrl}/ReportService/ReportDefinitions({$reportId})/Filters(0)/Execution");
 
-        return collect($devices)->map(function ($device) use ($warranties) {
-            // Cerchiamo la garanzia corrispondente tramite l'ID del dispositivo
-            $w = $warranties->firstWhere('DeviceId', $device['Id']);
+        if ($response->failed()) {
+            return ['error' => "Errore durante l'esecuzione del report"];
+        }
 
-            return [
-                'id_interno'    => $device['Id'],
-                'asset_name'    => $device['DeviceName'] ?? 'N/A',
-                'service_tag'   => $device['ServiceTag'],
-                'modello'       => $device['Model'],
-                'ip'            => $device['IPAddress'],
-                'stato_health'  => $this->translateStatus($device['Status']),
-                'garanzia'      => [
-                    'tipo'       => $w['EntitlementType'] ?? 'Unknown',
-                    'scadenza'   => isset($w['EndDate']) ? Carbon::parse($w['EndDate'])->format('Y-m-d') : 'N/A',
-                    'giorni_res' => $w['DaysRemaining'] ?? 0,
-                    'stato'      => ($w['DaysRemaining'] ?? 0) > 0 ? 'Attiva' : 'Scaduta',
-                ]
-            ];
-        });
+        return $this->parseReportResults($response->json());
     }
 
     /**
-     * Converte i codici di stato numerici di Dell in stringhe leggibili.
+     * Autenticazione SessionService per l'utente locale.
      */
-    private function translateStatus(int $status): string
+    protected function generateSessionToken(): ?string
     {
-        return match ($status) {
-            1000 => 'OK',
-            2000 => 'Unknown',
-            3000 => 'Warning',
-            4000 => 'Critical',
-            default => 'Non gestito',
-        };
+        $response = Http::withOptions(['verify' => false])
+            ->post("{$this->baseUrl}/SessionService/Sessions", [
+                'UserName' => $this->username,
+                'Password' => $this->password,
+                'SessionType' => 'API'
+            ]);
+
+        return $response->successful() ? $response->header('X-Auth-Token') : null;
+    }
+
+    /**
+     * Scarica l'elenco dei report e trova quello di tipo "Warranty" o Device Overview.
+     */
+    protected function findWarrantyReportId(string $token): ?int
+    {
+        $response = Http::withOptions(['verify' => false])
+            ->withHeaders(['X-Auth-Token' => $token])
+            ->get("{$this->baseUrl}/ReportService/ReportDefinitions");
+
+        if ($response->successful()) {
+            $reports = $response->json()['value'] ?? [];
+
+            Log::info('Dell OME - Report disponibili', [
+                'total_reports' => count($reports),
+                'reports' => array_map(fn($r) => $r['Name'], $reports)
+            ]);
+
+            // Cerchiamo prima il report Warranty
+            foreach ($reports as $report) {
+                if (stripos($report['Name'], 'Warranty') !== false) {
+                    Log::info("Dell OME - Trovato report Warranty: {$report['Name']} (ID: {$report['Id']})");
+                    return $report['Id'];
+                }
+            }
+
+            // Se non troviamo Warranty, cerchiamo Device Overview o simili
+            foreach ($reports as $report) {
+                if (stripos($report['Name'], 'Device') !== false && stripos($report['Name'], 'Overview') !== false) {
+                    Log::info("Dell OME - Trovato report Device Overview: {$report['Name']} (ID: {$report['Id']})");
+                    return $report['Id'];
+                }
+            }
+
+            // Ultimo tentativo: qualsiasi report con "Device"
+            foreach ($reports as $report) {
+                if (stripos($report['Name'], 'Device') !== false) {
+                    Log::info("Dell OME - Trovato report Device generico: {$report['Name']} (ID: {$report['Id']})");
+                    return $report['Id'];
+                }
+            }
+        }
+
+        Log::error('Dell OME - Nessun report trovato', [
+            'response_status' => $response->status(),
+            'response_body' => $response->body()
+        ]);
+
+        return null;
+    }
+
+    /**
+     * Mappa i risultati risolvendo i campi Service Tag e IP.
+     */
+    protected function parseReportResults(array $data): array
+    {
+        return collect($data['Records'] ?? [])->map(function ($row) {
+            return [
+                'device_name' => $row['Device Name'] ?? 'N/A',
+                // Identifier è il campo tecnico per il Service Tag in OME
+                'service_tag' => $row['Service Tag'] ?? $row['Identifier'] ?? 'N/A',
+                'model' => $row['Device Model'] ?? 'N/A',
+                'ip_address' => $row['IP Address'] ?? $row['NetAddress'] ?? 'N/A',
+                'warranty_status' => $row['Warranty State'] ?? 'N/A',
+                'days_remaining' => $row['Days Remaining'] ?? 0,
+            ];
+        })->toArray();
     }
 }
