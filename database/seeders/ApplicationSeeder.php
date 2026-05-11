@@ -208,8 +208,8 @@ class ApplicationSeeder extends Seeder
                 'ports' => '9443, 8243, 8280',
                 'has_mfa' => true,
                 'backup_strategy' => 'Database backup giornaliero + configuration backup',
-                'client_id' => 'Q8SXI4GfN2ubFmgyKe3LrPXmacQa',
-                'client_secret' => 'FAX5MOX5GKQT_TFBZLNyxc6TutJeFHWEGnfebPwicpca',
+                'client_id' => 'test_id',
+                'client_secret' => 'encrypted_secret_placeholder',        
             ],
             [
                 'name' => 'Grafana Dashboard',

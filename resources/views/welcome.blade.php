@@ -281,7 +281,7 @@
             </div>
 
             <footer class="no-print" style="text-align: center; margin-top: 4rem; color: var(--text-muted); font-size: 0.875rem;">
-                &copy; {{ date('Y') }} NIS2 Inventory Portal. Tutti i diritti riservati.
+                &copy; {{ date('Y') }} NIS2 Inventory Portal. Helpdesk fossr-na@icar.cnr.it.
             </footer>
         </div>
     </body>
