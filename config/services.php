@@ -29,6 +29,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'dell' => [
+        'ip' => env('DELL_OME_IP'),
+        'user' => env('DELL_OME_USER'),
+        'pass' => env('DELL_OME_PASS'),
+    ],
     'oidcx' => [
         'base_url' => env('OIDC_BASE_URL'),
         'client_id' => env('OIDC_CLIENT_ID'),
