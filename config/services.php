@@ -34,6 +34,14 @@ return [
         'user' => env('DELL_OME_USER'),
         'pass' => env('DELL_OME_PASS'),
     ],
+    'fossr' => [
+        'auth_url' => env('FOSSR_AUTH_URL'),
+        'gateway_url' => env('FOSSR_GATEWAY_URL'),
+        'username' => env('FOSSR_USERNAME'),
+        'password' => env('FOSSR_PASSWORD'),
+        'client_id' => env('FOSSR_CLIENT_ID'),
+        'client_secret' => env('FOSSR_CLIENT_SECRET'),
+    ],
     'oidcx' => [
         'base_url' => env('OIDC_BASE_URL'),
         'client_id' => env('OIDC_CLIENT_ID'),
