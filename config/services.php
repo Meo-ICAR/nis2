@@ -37,6 +37,7 @@ return [
     'fossr' => [
         'auth_url' => env('FOSSR_AUTH_URL'),
         'gateway_url' => env('FOSSR_GATEWAY_URL'),
+        'market_url' => env('FOSSR_MARKET_URL'),
         'username' => env('FOSSR_USERNAME'),
         'password' => env('FOSSR_PASSWORD'),
         'client_id' => env('FOSSR_CLIENT_ID'),
