@@ -41,6 +41,7 @@ return [
         'password' => env('FOSSR_PASSWORD'),
         'client_id' => env('FOSSR_CLIENT_ID'),
         'client_secret' => env('FOSSR_CLIENT_SECRET'),
+        'api_key' => env('FOSSR_API_KEY'),
     ],
     'oidcx' => [
         'base_url' => env('OIDC_BASE_URL'),

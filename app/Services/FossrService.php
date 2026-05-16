@@ -3,56 +3,111 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class FossrService
 {
-    protected string $authToken;
-
     /**
-     * Esegue l'autenticazione OAuth2 (Password Grant Flow)
+     * Recupera la lista dei progetti e arricchisce ognuno con la propria vm-list.
+     *
+     * @return array
      */
-    public function authenticate(): bool
+    public function getProjects(): array
     {
-        /*
-         * $response = Http::asForm()->post(config('services.fossr.auth_url'), [
-         *     'grant_type' => 'password',
-         *     'username' => config('services.fossr.username'),
-         *     'password' => config('services.fossr.password'),
-         *     'client_id' => config('services.fossr.client_id'),
-         *     'client_secret' => config('services.fossr.client_secret'),
-         * ]);
-         */
+        // 1. Richiesta iniziale dei Token (Password Grant)
+        $authUrl = config('services.fossr.auth_url');
 
-        // Cambia il corpo della richiesta nel metodo authenticate()
-        $response = Http::asForm()
+        $tokenPayload = [
+            'grant_type' => 'password',
+            'username' => config('services.fossr.username'),
+            'password' => config('services.fossr.password'),
+            'scope' => 'openid email profile roles',
+        ];
+
+        $tokenResponse = Http::asForm()
+            ->withOptions(['verify' => false])
             ->withBasicAuth(config('services.fossr.client_id'), config('services.fossr.client_secret'))
-            ->post(config('services.fossr.auth_url'), [
-                'grant_type' => 'client_credentials',
-                'scope' => 'openid',
-            ]);
+            ->post($authUrl, $tokenPayload);
 
-        if ($response->successful()) {
-            $this->authToken = $response->json('access_token');
-            return true;
+        $idToken = $tokenResponse->json('id_token');
+
+        if (!$idToken) {
+            dd([
+                'ERRORE' => "Impossibile estrarre l'id_token dallo Step di Auth",
+                'RISPOSTA_SERVER' => $tokenResponse->json() ?? $tokenResponse->body()
+            ]);
         }
 
-        Log::error('FOSSR Auth Failed', $response->json() ?? []);
-        return false;
+        // 2. Recupero della lista dei progetti principali
+        $gatewayUrl = rtrim(config('services.fossr.gateway_url'), '/');
+        $projectsUrl = $gatewayUrl . '/progetti';
+
+        $projectsResponse = Http::withOptions(['verify' => false])
+            ->withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $idToken,
+                'WSO2-Authorization' => trim(config('services.fossr.api_key')),
+            ])
+            ->get($projectsUrl);
+
+        if ($projectsResponse->failed()) {
+            dd([
+                'ERRORE' => 'Fallito recupero progetti',
+                'STATUS' => $projectsResponse->status(),
+                'BODY' => $projectsResponse->json() ?? $projectsResponse->body()
+            ]);
+        }
+
+        $progetti = $projectsResponse->json();
+
+        // 3. Ciclo su ogni progetto per recuperare la lista delle VM usando la nuova funzione
+        // Assumiamo che l'array contenga i progetti e che l'ID sia sotto la chiave 'id' (es. $progetto['id'])
+        if (is_array($progetti)) {
+            foreach ($progetti as $key => $progetto) {
+                if (isset($progetto['id'])) {
+                    // Chiamiamo la nuova funzione dedicata passando l'ID, l'id_token e il gatewayUrl
+                    $vmList = $this->getVmListByProjectId($progetto['id'], $idToken, $gatewayUrl);
+
+                    // Iniettiamo il risultato direttamente dentro l'oggetto del progetto corrente
+                    $progetti[$key]['vm_list'] = $vmList;
+                }
+            }
+        }
+
+        return $progetti;
     }
 
     /**
-     * Recupera la lista dei progetti
+     * Nuova funzione dedicata per interrogare l'endpoint iaas/<id>/vm-list di un singolo progetto.
+     * Mantiene gli stessi header di sicurezza scoperti su Postman.
+     *
+     * @param mixed $projectId
+     * @param string $idToken
+     * @param string $gatewayUrl
+     * @return array
      */
-    public function getProgetti()
+    public function getVmListByProjectId($projectId, string $idToken, string $gatewayUrl): array
     {
-        if (empty($this->authToken)) {
-            $this->authenticate();
+        // Costruzione dell'URL dinamico iniettando l'ID del progetto corrente
+        $url = $gatewayUrl . '/servizi/iaas/' . $projectId . '/vm-list';
+
+        $response = Http::withOptions(['verify' => false])
+            ->withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $idToken,
+                'WSO2-Authorization' => trim(config('services.fossr.api_key')),
+            ])
+            ->get($url);
+
+        // Se la chiamata fallisce per un singolo progetto (es. 404 o nessun servizio IaaS attivo),
+        // restituiamo un array vuoto o logghiamo l'errore senza bloccare l'intero ciclo degli altri progetti
+        if ($response->failed()) {
+            return [
+                'error' => true,
+                'status' => $response->status(),
+                'message' => 'Impossibile recuperare le VM per questo progetto.'
+            ];
         }
 
-        $response = Http::withToken($this->authToken)
-            ->get(config('services.fossr.gateway_url') . '/progetti');
-
-        return $response->successful() ? $response->json() : null;
+        return $response->json() ?? [];
     }
 }
