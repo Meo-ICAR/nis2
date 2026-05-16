@@ -3,15 +3,18 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class FossrService
 {
     /**
-     * Recupera la lista dei progetti e arricchisce ognuno con la propria vm-list.
+     * Recupera la lista dei progetti, arricchisce ognuno con la propria vm-list
+     * e salva il risultato finale in un file all'interno dello storage di Laravel.
      *
      * @return array
      */
-    public function getProjects(): array
+    public function getProjectsWithVmsAndSave(): array
     {
         // 1. Richiesta iniziale dei Token (Password Grant)
         $authUrl = config('services.fossr.auth_url');
@@ -31,6 +34,7 @@ class FossrService
         $idToken = $tokenResponse->json('id_token');
 
         if (!$idToken) {
+            Log::error("FossrService: Impossibile estrarre l'id_token dallo Step di Auth");
             dd([
                 'ERRORE' => "Impossibile estrarre l'id_token dallo Step di Auth",
                 'RISPOSTA_SERVER' => $tokenResponse->json() ?? $tokenResponse->body()
@@ -50,6 +54,7 @@ class FossrService
             ->get($projectsUrl);
 
         if ($projectsResponse->failed()) {
+            Log::error('FossrService: Fallito recupero progetti dal gateway');
             dd([
                 'ERRORE' => 'Fallito recupero progetti',
                 'STATUS' => $projectsResponse->status(),
@@ -59,26 +64,40 @@ class FossrService
 
         $progetti = $projectsResponse->json();
 
-        // 3. Ciclo su ogni progetto per recuperare la lista delle VM usando la nuova funzione
-        // Assumiamo che l'array contenga i progetti e che l'ID sia sotto la chiave 'id' (es. $progetto['id'])
+        // 3. Ciclo su ogni progetto per recuperare la lista delle VM
         if (is_array($progetti)) {
             foreach ($progetti as $key => $progetto) {
                 if (isset($progetto['id'])) {
-                    // Chiamiamo la nuova funzione dedicata passando l'ID, l'id_token e il gatewayUrl
                     $vmList = $this->getVmListByProjectId($progetto['id'], $idToken, $gatewayUrl);
-
-                    // Iniettiamo il risultato direttamente dentro l'oggetto del progetto corrente
                     $progetti[$key]['vm_list'] = $vmList;
                 }
             }
         }
 
+        // 4. Generazione del Payload Strutturato da salvare in Storage
+        $outputData = [
+            'dispatched_at' => now()->toIso8601String(),
+            'total_projects' => is_array($progetti) ? count($progetti) : 0,
+            'projects' => $progetti
+        ];
+
+        // Definizione dei nomi file
+        $timestampName = 'fossr_projects_vms_' . now()->format('Ymd_His') . '.json';
+        $latestName = 'fossr_projects_vms_latest.json';
+
+        $jsonPayload = json_encode($outputData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        // Salvataggio effettivo nel disco locale di Laravel (storage/app/)
+        Storage::disk('local')->put($timestampName, $jsonPayload);
+        Storage::disk('local')->put($latestName, $jsonPayload);
+
+        Log::info("FossrService: Dati salvati con successo in storage: {$timestampName}");
+
         return $progetti;
     }
 
     /**
-     * Nuova funzione dedicata per interrogare l'endpoint iaas/<id>/vm-list di un singolo progetto.
-     * Mantiene gli stessi header di sicurezza scoperti su Postman.
+     * Interroga l'endpoint iaas/<id>/vm-list di un singolo progetto.
      *
      * @param mixed $projectId
      * @param string $idToken
@@ -87,7 +106,6 @@ class FossrService
      */
     public function getVmListByProjectId($projectId, string $idToken, string $gatewayUrl): array
     {
-        // Costruzione dell'URL dinamico iniettando l'ID del progetto corrente
         $url = $gatewayUrl . '/servizi/iaas/' . $projectId . '/vm-list';
 
         $response = Http::withOptions(['verify' => false])
@@ -98,8 +116,6 @@ class FossrService
             ])
             ->get($url);
 
-        // Se la chiamata fallisce per un singolo progetto (es. 404 o nessun servizio IaaS attivo),
-        // restituiamo un array vuoto o logghiamo l'errore senza bloccare l'intero ciclo degli altri progetti
         if ($response->failed()) {
             return [
                 'error' => true,

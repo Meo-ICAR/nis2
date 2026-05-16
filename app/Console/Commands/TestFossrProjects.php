@@ -22,10 +22,11 @@ class TestFossrProjects extends Command
      */
     public function handle(FossrService $fossrService)
     {
-        $this->info('Richiesta in corso verso WSO2...');
+        $this->info('Inizio scaricamento dati e sincronizzazione VM...');
 
-        // Richiama la funzione del tuo Service
-        $result = $fossrService->getProjects();
+        $fossrService->getProjectsWithVmsAndSave();
+
+        $this->info('Flusso completato con successo! I dati sono stati archiviati in storage/app/.');
 
         if (isset($result['error'])) {
             $this->error('Si è verificato un errore: ' . $result['error']);
@@ -36,7 +37,6 @@ class TestFossrProjects extends Command
         $this->info('Risposta ricevuta con successo!');
 
         // Stampa a schermo i risultati formattati (dump and die)
-        dd($result);
 
         return Command::SUCCESS;
     }
