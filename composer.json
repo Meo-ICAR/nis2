@@ -15,6 +15,7 @@
         "filament/spatie-laravel-media-library-plugin": "^5.6",
         "kovah/laravel-socialite-oidc": "^0.8.0",
         "laravel/framework": "^13.7",
+        "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^3.0",
         "owenvoke/blade-fontawesome": "^3.2",
